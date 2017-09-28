@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Upload your drawings to imagebin</title>
+        <meta name="description" content="Frictionless one-click upload of simple drawings to imagebin" />
+
+        <link rel="stylesheet"
+              href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+              integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+              crossorigin="anonymous">
+        <script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+        <style>
+            .upload { float : left; margin-right: 3em; }
+            .uploadthumbnail { float: left; }
+            .deletebtn { margin-left: 3px; }
+            .notes { font-size: 0.85em; }
+
+            canvas {
+                cursor: crosshair;
+                border: 1px solid #000000;
+            }
+        </style>
+
+        <script>
+            var canvas = null;
+
+            function startup() {
+                canvas = document.getElementById('canvas');
+
+                // initialise canvas by filling in the background
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = "rgb(255,255,255)";
+                ctx.fillRect(0,0,500,300);
+
+                // Variables
+                var canvasx = $(canvas).offset().left;
+                var canvasy = $(canvas).offset().top;
+                var last_mousex = last_mousey = 0;
+                var mousex = mousey = 0;
+                var mousedown = false;
+                var tooltype = 'draw';
+
+                $(canvas).on('mousedown', function(e) {
+                    last_mousex = mousex = parseInt(e.pageX-canvasx);
+                    last_mousey = mousey = parseInt(e.pageY-canvasy);
+                    mousedown = true;
+                });
+
+                $(canvas).on('mouseup', function(e) {
+                    mousedown = false;
+                });
+
+                $(canvas).on('mousemove', function(e) {
+                    mousex = parseInt(e.pageX-canvasx);
+                    mousey = parseInt(e.pageY-canvasy);
+                    if(mousedown) {
+                        ctx.beginPath();
+                        if(tooltype=='draw') {
+                            ctx.globalCompositeOperation = 'source-over';
+                            ctx.strokeStyle = 'black';
+                            ctx.lineWidth = 5;
+                        } else {
+                            ctx.globalCompositeOperation = 'destination-out';
+                            ctx.lineWidth = 20;
+                        }
+                        ctx.moveTo(last_mousex,last_mousey);
+                        ctx.lineTo(mousex,mousey);
+                        ctx.lineJoin = ctx.lineCap = 'round';
+                        ctx.stroke();
+                    }
+                    last_mousex = mousex;
+                    last_mousey = mousey;
+                });
+
+                $(document).on('change', 'input:radio[name^="drawtooloptions"]', function (event) {
+                    if (event.target.id === "tooldraw") {
+                        tooltype = "draw";
+                    }
+                    else {
+                        tooltype = "erase";
+                    }
+                });
+
+                uploadComplete();
+
+                document.getElementById('takepicture').onclick = takePhoto;
+            }
+
+
+            function displayUploadedPhoto (imagebinConfirmationString) {
+                var newImgurUrl = imagebinConfirmationString.substr(imagebinConfirmationString.indexOf('url:') + 4);
+
+                var confirmElem = document.createElement('div');
+                confirmElem.innerHTML = "<div class='upload'>" +
+                                            "<div class='uploadthumbnail'>" +
+                                                "<img src='" + newImgurUrl + "' width=160 style='border: thin black solid'><br/>" +
+                                                "<small><a target=_blank href='" + newImgurUrl + "'>" + newImgurUrl + "</a></small>" +
+                                            "</div>" +
+                                        "</div>";
+
+                document.getElementById('uploads').append(confirmElem);
+                uploadComplete();
+            }
+
+
+            function uploadPhoto (imagedata) {
+                var formData = new FormData();
+                formData.append('file', imagedata);
+
+                $.ajax({
+                    url: 'https://dalelane-image-cors-proxy.mybluemix.net',
+                    type: 'POST',
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        Accept: 'application/json'
+                    },
+                    data: formData,
+                    success: displayUploadedPhoto,
+                    error: function(err) {
+                        console.log(err);
+                        alert('Upload failed : ' + err);
+
+                        uploadComplete();
+                    }
+                });
+            }
+
+            function uploadComplete() {
+                document.getElementById('takepicture').style.display = 'block';
+                document.getElementById('progress').style.display = 'none';
+            }
+
+
+            function takePhoto () {
+                document.getElementById('takepicture').style.display = 'none';
+                document.getElementById('progress').style.display = 'block';
+
+                canvas.toBlob(uploadPhoto, 'image/jpeg');
+            }
+
+            window.addEventListener('load', startup, false);
+        </script>
+
+    </head>
+    <body>
+        <div class="container">
+            <h1>Upload your drawings to imagebin</h1>
+        </div>
+
+        <div class="container" style="margin-top: 2em; margin-bottom: 2em;">
+            <div class="alert alert-success" role="alert"><strong>Drawing</strong></div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <canvas id="canvas" width="500" height="300"></canvas>
+                    <div class="btn-group" data-toggle="buttons" style="vertical-align: top; margin-left: 5px;">
+                        <label class="btn btn-default active">
+                            <input type="radio" id="tooldraw" name="drawtooloptions" checked > Draw
+                        </label>
+                        <label class="btn btn-default">
+                            <input type="radio" id="toolerase" name="drawtooloptions" > Erase
+                        </label>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <button type="button" class="btn btn-primary" id="takepicture">Upload to imagebin</button>
+                    <div class="progress" id="progress" style="height: 34px;">
+                        <div class="progress-bar progress-bar-striped active"
+                             role="progressbar"
+                             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                             <span class="sr-only">uploading</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" style="margin-top: 2em;">
+            <div class="alert alert-info" role="alert"><strong>Uploads</strong></div>
+        </div>
+        <div class="container"  id="uploads" style="margin-bottom: 2em; min-height: 140px;">
+
+        </div>
+
+        <div class="container" style="clear: both; margin-top: 2em; margin-bottom: 2em;">
+            <div class="alert alert-warning" role="alert"><strong>Notes</strong></div>
+            <div class="notes">This tool uses the <a href="https://imagebin.ca/tools.php">imagebin API</a> but is not provided, supported or endorsed by them.</div>
+            <div class="notes">Source code : <a href="https://github.com/dalelane/drawing-to-imagebin">github.com</a></div>
+            <div class="notes">Created by <a href="https://twitter.com/dalelane">@dalelane</a></div>
+        </div>
+    </body>
+</html>
