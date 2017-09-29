@@ -28,24 +28,33 @@
 
         <script>
             var canvas = null;
+            var ctx = null;
+
+            var canvasx = 0;
+            var canvasy = 0;
+
+            function reset() {
+                ctx.fillStyle = "rgb(255,255,255)";
+                ctx.fillRect(0,0,500,300);
+            }
+
 
             function startup() {
                 canvas = document.getElementById('canvas');
+                ctx = canvas.getContext('2d');
 
                 // initialise canvas by filling in the background
-                var ctx = canvas.getContext('2d');
-                ctx.fillStyle = "rgb(255,255,255)";
-                ctx.fillRect(0,0,500,300);
+                reset();
 
                 // Variables
-                var canvasx = $(canvas).offset().left;
-                var canvasy = $(canvas).offset().top;
                 var last_mousex = last_mousey = 0;
                 var mousex = mousey = 0;
                 var mousedown = false;
                 var tooltype = 'draw';
 
                 $(canvas).on('mousedown', function(e) {
+                    canvasx = $(canvas).offset().left;
+                    canvasy = $(canvas).offset().top;
                     last_mousex = mousex = parseInt(e.pageX-canvasx);
                     last_mousey = mousey = parseInt(e.pageY-canvasy);
                     mousedown = true;
@@ -104,6 +113,7 @@
                                         "</div>";
 
                 document.getElementById('uploads').append(confirmElem);
+                reset();
                 uploadComplete();
             }
 
