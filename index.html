@@ -69,12 +69,12 @@
                     mousey = parseInt(e.pageY-canvasy);
                     if(mousedown) {
                         ctx.beginPath();
+                        ctx.globalCompositeOperation = 'source-over';
                         if(tooltype=='draw') {
-                            ctx.globalCompositeOperation = 'source-over';
                             ctx.strokeStyle = 'black';
                             ctx.lineWidth = 5;
                         } else {
-                            ctx.globalCompositeOperation = 'destination-out';
+                            ctx.strokeStyle = 'white';
                             ctx.lineWidth = 20;
                         }
                         ctx.moveTo(last_mousex,last_mousey);
