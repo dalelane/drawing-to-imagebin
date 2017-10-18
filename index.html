@@ -41,6 +41,62 @@
             }
 
 
+            var last_mousex = last_mousey = 0;
+            var mousex = mousey = 0;
+            var mousedown = false;
+            var tooltype = 'draw';
+
+            function handleMouseDown(e) {
+                canvasx = $(canvas).offset().left;
+                canvasy = $(canvas).offset().top;
+                last_mousex = mousex = parseInt(e.pageX-canvasx);
+                last_mousey = mousey = parseInt(e.pageY-canvasy);
+                mousedown = true;
+            }
+            function handleMouseUp() {
+                mousedown = false;
+            }
+            function handleMouseMove(e) {
+                mousex = parseInt(e.pageX-canvasx);
+                mousey = parseInt(e.pageY-canvasy);
+                if(mousedown) {
+                    ctx.beginPath();
+                    ctx.globalCompositeOperation = 'source-over';
+                    if(tooltype=='draw') {
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 5;
+                    } else {
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 20;
+                    }
+                    ctx.moveTo(last_mousex,last_mousey);
+                    ctx.lineTo(mousex,mousey);
+                    ctx.lineJoin = ctx.lineCap = 'round';
+                    ctx.stroke();
+                }
+                last_mousex = mousex;
+                last_mousey = mousey;
+            }
+
+            function preventScrollOnTouch() {
+                document.body.addEventListener('touchstart', function (e) {
+                    if (e.target === canvas) {
+                        e.preventDefault();
+                    }
+                }, false);
+                document.body.addEventListener('touchend', function (e) {
+                    if (e.target === canvas) {
+                        e.preventDefault();
+                    }
+                }, false);
+                document.body.addEventListener('touchmove', function (e) {
+                    if (e.target === canvas) {
+                        e.preventDefault();
+                    }
+                }, false);
+            }
+
+
             function startup() {
                 canvas = document.getElementById('canvas');
                 ctx = canvas.getContext('2d');
@@ -48,45 +104,15 @@
                 // initialise canvas by filling in the background
                 reset();
 
-                // Variables
-                var last_mousex = last_mousey = 0;
-                var mousex = mousey = 0;
-                var mousedown = false;
-                var tooltype = 'draw';
+                $(canvas).on('mousedown', handleMouseDown);
+                $(canvas).on('mouseup', handleMouseUp);
+                $(canvas).on('mousemove', handleMouseMove);
 
-                $(canvas).on('mousedown', function(e) {
-                    canvasx = $(canvas).offset().left;
-                    canvasy = $(canvas).offset().top;
-                    last_mousex = mousex = parseInt(e.pageX-canvasx);
-                    last_mousey = mousey = parseInt(e.pageY-canvasy);
-                    mousedown = true;
-                });
+                $(canvas).on('touchstart', handleMouseDown);
+                $(canvas).on('touchend', handleMouseUp);
+                $(canvas).on('touchmove', handleMouseMove);
 
-                $(canvas).on('mouseup', function(e) {
-                    mousedown = false;
-                });
-
-                $(canvas).on('mousemove', function(e) {
-                    mousex = parseInt(e.pageX-canvasx);
-                    mousey = parseInt(e.pageY-canvasy);
-                    if(mousedown) {
-                        ctx.beginPath();
-                        ctx.globalCompositeOperation = 'source-over';
-                        if(tooltype=='draw') {
-                            ctx.strokeStyle = 'black';
-                            ctx.lineWidth = 5;
-                        } else {
-                            ctx.strokeStyle = 'white';
-                            ctx.lineWidth = 20;
-                        }
-                        ctx.moveTo(last_mousex,last_mousey);
-                        ctx.lineTo(mousex,mousey);
-                        ctx.lineJoin = ctx.lineCap = 'round';
-                        ctx.stroke();
-                    }
-                    last_mousex = mousex;
-                    last_mousey = mousey;
-                });
+                preventScrollOnTouch();
 
                 $(document).on('change', 'input:radio[name^="drawtooloptions"]', function (event) {
                     if (event.target.id === "tooldraw") {
