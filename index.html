@@ -33,6 +33,8 @@
             var canvasx = 0;
             var canvasy = 0;
 
+            var uploadedSomething = false;
+
             function reset() {
                 ctx.fillStyle = "rgb(255,255,255)";
                 ctx.fillRect(0,0,500,300);
@@ -98,6 +100,12 @@
                 uploadComplete();
 
                 document.getElementById('takepicture').onclick = takePhoto;
+
+                window.onbeforeunload = function () {
+                    if (uploadedSomething) {
+                        return "You will lose everything on this page if you leave or reload the page. Are you sure?";
+                    }
+                };
             }
 
 
@@ -115,6 +123,8 @@
                 document.getElementById('uploads').append(confirmElem);
                 reset();
                 uploadComplete();
+
+                uploadedSomething = true;
             }
 
 
